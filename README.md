@@ -2,6 +2,11 @@
 A3200 fabricate_debugger
 
 ## 更新日志
+### v2.8
++ 增加多pgm未加入'PROGRAM 1 STOP'判断(line 59 135 180--182 194 195)
++ 增加debugger预计时间输出(line 137 142--145)
++ 修复多pgm的主程序运动指令未在debugger中体现(line 36 37 222--228)
++ 修复error显示(line 198)
 ### v2.7
 + 增加“开光闸且正向x运动时报错” (line 14 22 272 291--293)
 + 增加改功率指令 (line 175--176)

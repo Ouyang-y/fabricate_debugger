@@ -33,8 +33,8 @@ end
 
 %% PROGRAM构建新文件为temp.pgm
 tic,f=fopen(pgmPath,'r');
-pgm.list = {};
-pgm.num = 0;
+pgm.list = {pgmPath};
+pgm.num = 1;
 while ~feof(f)
     currentLine = fgetl(f);
     if isempty(currentLine),continue;end % 空行
@@ -56,7 +56,7 @@ if pgm.num
             currentLine = fgets(ftemp);
             fwrite(f,currentLine);
         end
-        fwrite(f,sprintf('\n''OYY_END\n'));
+        if temp>1,fwrite(f,sprintf('\n''OYY_END\n'));end
         fclose(ftemp);
     end
     fclose(f);toc,fprintf('temp.pgm生成完成\n');
@@ -132,12 +132,17 @@ if Velocity_min<1,Vindex = 1/Velocity_min;end
 Velocity_min=Vindex*Velocity_min-1;Velocity_max=Vindex*Velocity_max;
 lineColorF = colormap(cool(fix(Velocity_max - Velocity_min)));
 notdwell=[0,0,0];
+PgmStopCheck = 1;
 waitBar=waitbar(0,'1','name','SIMULATING...');pgmCount = 1;
+ticPlot = tic;
 while ~feof(f)
     rowNow = rowNow + 1;
     if mod(rowNow,rowPeriod) == 0
         waitbar(rowNow/rowTotal,waitBar,sprintf('%.3g%%，rowNow=%d\nrowTotal=%d',...
-            rowNow/rowTotal*100,rowNow,rowTotal));toc(ticAll)
+            rowNow/rowTotal*100,rowNow,rowTotal));
+        costNow = toc(ticPlot);
+        costAll = costNow/rowNow*(rowTotal-rowNow);
+        fprintf("已用时：%12.3f 秒，剩余预计：%12.3f 秒\n",costNow,costAll);
     end
     currentLine = fgetl(f);
     if isempty(currentLine),continue;end % 空行
@@ -172,8 +177,9 @@ while ~feof(f)
         case 'INCREMENTAL',isABSOLUTE=0;count.Count(5)=count.Count(5)+1;
         case 'ABSOLUTE',isABSOLUTE=1;count.Count(5)=count.Count(5)+1;
         case 'G92',G92(s{1}{2:end});count.Count(6)=count.Count(6)+1;
+        case 'PROGRAM',if size(s{1},1)==3&&strcmp(s{1}{3},'STOP'),PgmStopCheck = 0;end,count.Count(6)=count.Count(6)+1;
         case {'G359','ENABLE','METRIC','SECONDS','VELOCITY','PSOOUTPUT',...
-                'PROGRAM','DVAR','FILECLOSE','$hFile','COMMINIT','COMMSETTIMEOUT','FILEWRITE'},count.Count(6)=count.Count(6)+1;
+                'DVAR','FILECLOSE','$hFile','COMMINIT','COMMSETTIMEOUT','FILEWRITE'},count.Count(6)=count.Count(6)+1;
         otherwise
             if currentLine(1) == "'"    % 注释行
                 if strcmp(s{1}{1},"'plotSwitch")   % 绘制判断
@@ -185,10 +191,11 @@ while ~feof(f)
                 end
                 if strcmp(pgmPath,'temp.pgm')&&strcmp(s{1}{1},"'OYY_END")   % .pgm之一终止
                     mesh([0,0;pgmDiv.Xsize,pgmDiv.Xsize],[costY,costY;costY,costY],[PointNow(3),PointNow(3)-pgmDiv.Zsize;PointNow(3),PointNow(3)-pgmDiv.Zsize],EdgeColor='k',LineWidth=2,FaceColor='w',FaceAlpha=0.3);
-                    timeList(pgmCount) = sum(time.Time);pgmCount = pgmCount+1;
+                    if PgmStopCheck,error("请检查'%s'中是否含有PROGRAM 1 STOP\n",pgm.list{pgmCount});else,PgmStopCheck=1;end
+                    timeList(pgmCount) = sum(time.Time);pgmCount = pgmCount+1;notdwell=[0,0,0];
                 end
             else
-                error([mfilename,'：标识符非法'],[currentLine,'\n非法标识符<%s>，line %d'],s{1}{1},rowNow);
+                error(fprintf([mfilename,'：标识符非法','\n',currentLine,'\n非法标识符<%s>，line %d\n'],s{1}{1},rowNow));
             end
     end
 end
@@ -212,13 +219,13 @@ msg(2,1) = {msgTime};
 if pgm.num
     delete('temp.pgm');
     timeListtemp = [timeList(1);diff(timeList)];
-    for temp = 1:pgm.num
+    for temp = 1:pgm.num-1
         timetemp = timeListtemp(temp);
         hour = floor(timetemp / 3600);minute = floor((timetemp - hour*3600) / 60);second = floor(timetemp - hour*3600 - minute*60);
-        msgTime = [msgTime,newline,pgm.list{temp},':'];
-        if hour,msgTime = [msgTime,num2str(hour),'h'];end
-        if minute,msgTime = [msgTime,num2str(minute),'m'];end
-        if second,msgTime = [msgTime,num2str(second),'s'];end
+        msgTime = [msgTime,newline,pgm.list{temp+1},':'];%#ok
+        if hour,msgTime = [msgTime,num2str(hour),'h'];end%#ok
+        if minute,msgTime = [msgTime,num2str(minute),'m'];end%#ok
+        if second,msgTime = [msgTime,num2str(second),'s'];end%#ok
     end
 end
 % plot summary pie
