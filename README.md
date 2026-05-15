@@ -2,6 +2,12 @@
 A3200 fabricate_debugger
 
 ## 更新日志
+### v2.9
++ 增加`ascript2pgm.m`、`pgm2ascript.m`
++ 增加绘图控制，引入全局变量`plotSwitchMain`，控制整个程序是否绘图
++ 增加识别类别`PT`、`PSOCONTROL ARM`、`ARRAY`、`CRITICAL`、`PSOTRACK`、`PSODISTANCE`、`END`
++ 修复`$hFile`识别为任意变量
++ 修复CW、CCW时间计算
 ### v2.8
 + 增加多pgm未加入'PROGRAM 1 STOP'判断(line 59 135 180--182 194 195)
 + 增加debugger预计时间输出(line 137 142--145)
