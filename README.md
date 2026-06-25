@@ -1,6 +1,10 @@
 # fabricate_debugger
 Automation1 fabricate_debugger
 
+## 另可参看
+- [ascript-pgmConverter](https://github.com/Ouyang-y/ascript-pgmConverter)
+- [Automation1 Help](https://help.aerotech.com/automation1/Content/Concepts/Motion-Functions.htm)
+
 ## 更新日志
 ### v3.0
 
